@@ -279,80 +279,124 @@ function joinCleanup(cleanup) {
 // ============================================
 
 function initializeWeather() {
-    // Default to major coastal cities for demo
-    const defaultLocations = [
-        { name: 'San Francisco Bay', lat: 37.7749, lng: -122.4194 },
-        { name: 'Los Angeles Coast', lat: 34.0522, lng: -118.2437 },
-        { name: 'San Diego Beach', lat: 32.7157, lng: -117.1611 }
-    ];
-    
-    defaultLocations.forEach(loc => updateWeather(loc.lat, loc.lng, loc.name));
+    // Fetch Singapore weather from NEA (National Environment Agency) API
+    fetchNEAWeatherForecast();
 }
 
-function updateWeather(lat, lng, locationName = 'Current Location') {
-    // Using Open-Meteo free API (no key required)
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
+function fetchNEAWeatherForecast() {
+    // NEA 4-Day Forecast API via data.gov.sg (no API key required)
+    const url = 'https://api.data.gov.sg/v1/environment/4-day-weather-forecast';
     
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            const current = data.current;
-            const weatherIcon = getWeatherEmoji(current.weather_code);
-            
-            const weatherContainer = document.getElementById('weatherContainer');
-            const weatherCard = document.createElement('div');
-            weatherCard.className = 'weather-card';
-            weatherCard.innerHTML = `
-                <div class="weather-icon">${weatherIcon}</div>
-                <div class="weather-temp">${Math.round(current.temperature_2m)}°C</div>
-                <div class="weather-condition">${getWeatherDescription(current.weather_code)}</div>
-                <p style="font-size: 0.85rem; color: #999; margin-top: 8px;">💨 ${current.wind_speed_10m} km/h</p>
-                <p style="font-size: 0.8rem; color: #0066CC; margin-top: 8px;"><strong>${locationName}</strong></p>
-            `;
-            weatherContainer.appendChild(weatherCard);
+            displayNEAForecast(data);
         })
         .catch(err => {
-            console.error('Weather API error:', err);
-            const weatherContainer = document.getElementById('weatherContainer');
-            weatherContainer.innerHTML = '<p class="weather-card">Unable to load weather. Check your connection.</p>';
+            console.error('NEA Weather API error:', err);
+            displayForecastError();
         });
 }
 
-function getWeatherEmoji(code) {
-    if (code === 0) return '☀️';
-    if (code === 1 || code === 2) return '🌤️';
-    if (code === 3) return '☁️';
-    if (code === 45 || code === 48) return '🌫️';
-    if (code === 51 || code === 53 || code === 55) return '🌧️';
-    if (code === 61 || code === 63 || code === 65) return '🌧️';
-    if (code === 71 || code === 73 || code === 75) return '❄️';
-    if (code === 80 || code === 81 || code === 82) return '⛈️';
-    return '🌈';
+function displayNEAForecast(data) {
+    const weatherContainer = document.getElementById('weatherContainer');
+    weatherContainer.innerHTML = '';
+    
+    if (!data.items || data.items.length === 0) {
+        displayForecastError();
+        return;
+    }
+    
+    const forecast = data.items[0];
+    const validDate = new Date(forecast.valid_period.start).toLocaleDateString('en-SG', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+    
+    // Header with forecast date
+    const headerHTML = `
+        <div class="forecast-header" style="grid-column: 1/-1; margin-bottom: 20px;">
+            <h3 style="color: #0066CC; margin: 0 0 8px 0; font-size: 1.2rem;">📅 Singapore 4-Day Forecast</h3>
+            <p style="color: #666; margin: 0; font-size: 0.9rem;">Updated: ${validDate}</p>
+        </div>
+    `;
+    weatherContainer.innerHTML = headerHTML;
+    
+    // General forecast card
+    const general = forecast.general;
+    const generalCard = document.createElement('div');
+    generalCard.className = 'weather-card nea-weather-card';
+    generalCard.style.gridColumn = '1 / -1';
+    generalCard.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <h4 style="color: #0066CC; margin: 0 0 12px 0; font-size: 1.1rem;">🌍 General Outlook</h4>
+                <p style="color: #333; margin: 0; font-weight: 600;">${general.forecast}</p>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E0E0E0;">
+                    <p style="margin: 8px 0; color: #555;"><strong>🌡️ Relative Humidity:</strong> ${general.relative_humidity[0]}% - ${general.relative_humidity[1]}%</p>
+                    <p style="margin: 8px 0; color: #555;"><strong>💨 Wind:</strong> ${general.wind.speed[0]}-${general.wind.speed[1]} km/h from ${general.wind.direction}</p>
+                </div>
+            </div>
+            <div>
+                <h4 style="color: #0066CC; margin: 0 0 12px 0; font-size: 1.1rem;">⚡ Beach Cleanup Tips</h4>
+                <div style="background: #FFF3CD; padding: 12px; border-radius: 6px; border-left: 4px solid #FF9800;">
+                    <p style="margin: 0; color: #856404; font-size: 0.95rem;">✓ Bring UV protection and hydration</p>
+                    <p style="margin: 8px 0 0 0; color: #856404; font-size: 0.95rem;">✓ Check rain forecast before planning</p>
+                </div>
+            </div>
+        </div>
+    `;
+    weatherContainer.appendChild(generalCard);
+    
+    // 4-day breakdown
+    if (forecast.periods && forecast.periods.length > 0) {
+        const forecastTitle = document.createElement('div');
+        forecastTitle.style.cssText = 'grid-column: 1/-1; margin-top: 24px; margin-bottom: 12px;';
+        forecastTitle.innerHTML = '<h4 style="color: #0066CC; margin: 0; font-size: 1rem;">📍 4-Day Breakdown</h4>';
+        weatherContainer.appendChild(forecastTitle);
+        
+        forecast.periods.forEach((period, index) => {
+            const startDate = new Date(period.time_period.start);
+            const dayName = startDate.toLocaleDateString('en-SG', { weekday: 'short', month: 'short', day: 'numeric' });
+            const timeSlot = startDate.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
+            
+            const dayCard = document.createElement('div');
+            dayCard.className = 'weather-card day-forecast-card';
+            dayCard.innerHTML = `
+                <div style="border-bottom: 2px solid #E0E0E0; padding-bottom: 10px; margin-bottom: 10px;">
+                    <p style="margin: 0; font-weight: 700; color: #0066CC; font-size: 1rem;">${dayName}</p>
+                    <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #999;">${timeSlot}</p>
+                </div>
+                <p style="margin: 8px 0; color: #333; font-weight: 600;">${period.forecast}</p>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #E8E8E8; font-size: 0.9rem;">
+                    <p style="margin: 4px 0; color: #555;">💨 ${period.wind.speed} km/h ${period.wind.direction}</p>
+                    <p style="margin: 4px 0; color: #555;">💧 ${period.relative_humidity}%</p>
+                </div>
+            `;
+            weatherContainer.appendChild(dayCard);
+        });
+    }
 }
 
-function getWeatherDescription(code) {
-    const descriptions = {
-        0: 'Clear',
-        1: 'Partly Cloudy',
-        2: 'Mostly Cloudy',
-        3: 'Cloudy',
-        45: 'Foggy',
-        48: 'Foggy',
-        51: 'Light Drizzle',
-        53: 'Drizzle',
-        55: 'Heavy Drizzle',
-        61: 'Rain',
-        63: 'Heavy Rain',
-        65: 'Very Heavy Rain',
-        71: 'Snow',
-        73: 'Heavy Snow',
-        75: 'Heavy Snow',
-        80: 'Showers',
-        81: 'Heavy Showers',
-        82: 'Extreme Showers'
-    };
-    return descriptions[code] || 'Unknown';
+function displayForecastError() {
+    const weatherContainer = document.getElementById('weatherContainer');
+    weatherContainer.innerHTML = `
+        <div class="weather-card" style="grid-column: 1/-1; text-align: center;">
+            <p style="color: #666; margin: 0;">⚠️ Unable to load NEA weather forecast</p>
+            <p style="color: #999; margin: 8px 0 0 0; font-size: 0.9rem;">Please check your internet connection</p>
+        </div>
+    `;
 }
+
+function updateWeather(lat, lng, locationName = 'Current Location') {
+    // Legacy function - kept for compatibility
+    // NEA API now handles Singapore weather updates
+}
+
+// Weather emoji and description functions moved to NEA API format
+// (NEA provides forecast text directly, no WMO codes)
 
 // ============================================
 // CREW MANAGEMENT
