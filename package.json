@@ -1,0 +1,26 @@
+{
+  "name": "shoresquad",
+  "version": "1.0.0",
+  "description": "Rally your crew, track weather, and hit the next beach cleanup!",
+  "main": "js/app.js",
+  "scripts": {
+    "dev": "live-server",
+    "start": "python -m http.server 5500"
+  },
+  "keywords": [
+    "beach",
+    "cleanup",
+    "environment",
+    "community",
+    "map",
+    "weather"
+  ],
+  "author": "ShoreSquad Team",
+  "license": "MIT",
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
