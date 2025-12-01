@@ -302,82 +302,89 @@ function displayNEAForecast(data) {
     const weatherContainer = document.getElementById('weatherContainer');
     weatherContainer.innerHTML = '';
     
-    if (!data.items || data.items.length === 0) {
+    if (!data.items || data.items.length === 0 || !data.items[0].forecasts) {
         displayForecastError();
         return;
     }
     
-    const forecast = data.items[0];
-    const validDate = new Date(forecast.valid_period.start).toLocaleDateString('en-SG', {
+    const item = data.items[0];
+    const updateDate = new Date(item.update_timestamp).toLocaleDateString('en-SG', {
         weekday: 'short',
         year: 'numeric',
         month: 'short',
         day: 'numeric'
     });
     
+    const updateTime = new Date(item.update_timestamp).toLocaleTimeString('en-SG', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
     // Header with forecast date
     const headerHTML = `
         <div class="forecast-header" style="grid-column: 1/-1; margin-bottom: 20px;">
-            <h3 style="color: #0066CC; margin: 0 0 8px 0; font-size: 1.2rem;">📅 Singapore 4-Day Forecast</h3>
-            <p style="color: #666; margin: 0; font-size: 0.9rem;">Updated: ${validDate}</p>
+            <h3 style="color: #0066CC; margin: 0 0 8px 0; font-size: 1.2rem;">📅 Singapore 4-Day Weather Forecast</h3>
+            <p style="color: #666; margin: 0; font-size: 0.9rem;">Updated: ${updateDate} at ${updateTime}</p>
         </div>
     `;
     weatherContainer.innerHTML = headerHTML;
     
-    // General forecast card
-    const general = forecast.general;
-    const generalCard = document.createElement('div');
-    generalCard.className = 'weather-card nea-weather-card';
-    generalCard.style.gridColumn = '1 / -1';
-    generalCard.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div>
-                <h4 style="color: #0066CC; margin: 0 0 12px 0; font-size: 1.1rem;">🌍 General Outlook</h4>
-                <p style="color: #333; margin: 0; font-weight: 600;">${general.forecast}</p>
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E0E0E0;">
-                    <p style="margin: 8px 0; color: #555;"><strong>🌡️ Relative Humidity:</strong> ${general.relative_humidity[0]}% - ${general.relative_humidity[1]}%</p>
-                    <p style="margin: 8px 0; color: #555;"><strong>💨 Wind:</strong> ${general.wind.speed[0]}-${general.wind.speed[1]} km/h from ${general.wind.direction}</p>
-                </div>
-            </div>
-            <div>
-                <h4 style="color: #0066CC; margin: 0 0 12px 0; font-size: 1.1rem;">⚡ Beach Cleanup Tips</h4>
-                <div style="background: #FFF3CD; padding: 12px; border-radius: 6px; border-left: 4px solid #FF9800;">
-                    <p style="margin: 0; color: #856404; font-size: 0.95rem;">✓ Bring UV protection and hydration</p>
-                    <p style="margin: 8px 0 0 0; color: #856404; font-size: 0.95rem;">✓ Check rain forecast before planning</p>
-                </div>
-            </div>
-        </div>
-    `;
-    weatherContainer.appendChild(generalCard);
-    
-    // 4-day breakdown
-    if (forecast.periods && forecast.periods.length > 0) {
-        const forecastTitle = document.createElement('div');
-        forecastTitle.style.cssText = 'grid-column: 1/-1; margin-top: 24px; margin-bottom: 12px;';
-        forecastTitle.innerHTML = '<h4 style="color: #0066CC; margin: 0; font-size: 1rem;">📍 4-Day Breakdown</h4>';
-        weatherContainer.appendChild(forecastTitle);
-        
-        forecast.periods.forEach((period, index) => {
-            const startDate = new Date(period.time_period.start);
-            const dayName = startDate.toLocaleDateString('en-SG', { weekday: 'short', month: 'short', day: 'numeric' });
-            const timeSlot = startDate.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
+    // 4-day forecast breakdown
+    if (item.forecasts && item.forecasts.length > 0) {
+        item.forecasts.forEach((forecast, index) => {
+            const forecastDate = new Date(forecast.date);
+            const dayName = forecastDate.toLocaleDateString('en-SG', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Determine weather emoji based on forecast text
+            const weatherEmoji = getWeatherEmojiFromText(forecast.forecast);
             
             const dayCard = document.createElement('div');
             dayCard.className = 'weather-card day-forecast-card';
+            dayCard.style.cssText = index === 0 ? 'grid-column: 1/-1; border: 2px solid #00BCD4;' : '';
+            
+            const humidityHTML = forecast.relative_humidity ? 
+                `<p style="margin: 4px 0; color: #555;">💧 ${forecast.relative_humidity.low}% - ${forecast.relative_humidity.high}%</p>` : '';
+            
+            const windHTML = forecast.wind ? 
+                `<p style="margin: 4px 0; color: #555;">💨 ${forecast.wind.speed[0]}-${forecast.wind.speed[1]} km/h ${forecast.wind.direction}</p>` : '';
+            
+            const tempHTML = forecast.temperature ? 
+                `<p style="margin: 4px 0; color: #555;">🌡️ ${forecast.temperature.low}-${forecast.temperature.high}°C</p>` : '';
+            
             dayCard.innerHTML = `
-                <div style="border-bottom: 2px solid #E0E0E0; padding-bottom: 10px; margin-bottom: 10px;">
-                    <p style="margin: 0; font-weight: 700; color: #0066CC; font-size: 1rem;">${dayName}</p>
-                    <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #999;">${timeSlot}</p>
+                <div style="border-bottom: 2px solid #E0E0E0; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <p style="margin: 0; font-weight: 700; color: #0066CC; font-size: 1rem;">${dayName}</p>
+                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #999;">Day ${index + 1}</p>
+                    </div>
+                    <div style="font-size: 2rem;">${weatherEmoji}</div>
                 </div>
-                <p style="margin: 8px 0; color: #333; font-weight: 600;">${period.forecast}</p>
+                <p style="margin: 8px 0; color: #333; font-weight: 600;">${forecast.forecast}</p>
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #E8E8E8; font-size: 0.9rem;">
-                    <p style="margin: 4px 0; color: #555;">💨 ${period.wind.speed} km/h ${period.wind.direction}</p>
-                    <p style="margin: 4px 0; color: #555;">💧 ${period.relative_humidity}%</p>
+                    ${tempHTML}
+                    ${humidityHTML}
+                    ${windHTML}
                 </div>
             `;
             weatherContainer.appendChild(dayCard);
         });
     }
+}
+
+function getWeatherEmojiFromText(text) {
+    const lower = text.toLowerCase();
+    if (lower.includes('thundery') || lower.includes('thunder')) return '⛈️';
+    if (lower.includes('shower') || lower.includes('rain')) return '🌧️';
+    if (lower.includes('cloud')) return '☁️';
+    if (lower.includes('partly')) return '🌤️';
+    if (lower.includes('clear') || lower.includes('sunny')) return '☀️';
+    if (lower.includes('fog') || lower.includes('mist')) return '🌫️';
+    if (lower.includes('snow')) return '❄️';
+    return '🌈';
 }
 
 function displayForecastError() {
