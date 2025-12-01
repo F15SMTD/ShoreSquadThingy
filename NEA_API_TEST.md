@@ -34,14 +34,29 @@
 - **No Parameters:** NEA API covers all of Singapore
 
 #### `displayNEAForecast(data)`
-- **New Function:** Parses NEA JSON response
+- **New Function:** Parses actual NEA JSON response format
 - **Features:**
-  - Header with update timestamp
-  - General outlook card with humidity range & wind direction
-  - Beach cleanup tips advisory
-  - 4-day period breakdown with timestamps
-  - Wind speed (km/h) and humidity (%) for each period
+  - Header with update timestamp (date and time)
+  - Iterates through 4 forecast days
+  - Creates cards for each day with emoji indicator
+  - First day card highlighted with blue border (current day)
+  - Displays temperature range (low-high) in °C
+  - Shows humidity range (low-high) in %
+  - Shows wind speed range and direction (km/h)
+  - Weather emoji generated from forecast text description
   - All metric units preserved
+
+#### `getWeatherEmojiFromText(text)`
+- **New Function:** Determines emoji from NEA forecast text
+- **Maps:**
+  - "thundery" or "thunder" → ⛈️
+  - "shower" or "rain" → 🌧️
+  - "cloud" → ☁️
+  - "partly" → 🌤️
+  - "clear" or "sunny" → ☀️
+  - "fog" or "mist" → 🌫️
+  - "snow" → ❄️
+  - Default: 🌈
 
 #### `displayForecastError()`
 - **New Function:** User-friendly error handling
@@ -63,48 +78,52 @@
 
 ## Data Structure
 
-### NEA API Response Example
+### NEA API Response Example (Actual)
 ```json
 {
   "items": [
     {
-      "valid_period": {
-        "start": "2024-01-15T00:00:00+08:00",
-        "end": "2024-01-19T00:00:00+08:00"
-      },
-      "general": {
-        "forecast": "Afternoon thundery showers",
-        "relative_humidity": [65, 95],
-        "wind": {
-          "speed": [10, 25],
-          "direction": "N"
-        }
-      },
-      "periods": [
+      "update_timestamp": "2025-12-01T05:20:52+08:00",
+      "timestamp": "2025-12-01T05:11:00+08:00",
+      "forecasts": [
         {
-          "time_period": {
-            "start": "2024-01-15T00:00:00+08:00",
-            "end": "2024-01-15T06:00:00+08:00"
+          "date": "2025-12-01",
+          "temperature": {
+            "low": 24,
+            "high": 31
           },
-          "forecast": "Isolated showers",
-          "wind": {"speed": 15, "direction": "N"},
-          "relative_humidity": 85
+          "forecast": "Afternoon thundery showers",
+          "relative_humidity": {
+            "low": 60,
+            "high": 95
+          },
+          "wind": {
+            "speed": [10, 25],
+            "direction": "N"
+          }
         },
-        ...
+        ...more days...
       ]
     }
-  ]
+  ],
+  "api_info": {...}
 }
 ```
 
 ### Display Format
-- **Header:** Updated date in SG locale (e.g., "Mon, 15 Jan 2024")
-- **General Section:** 2-column grid with outlook & beach tips
-- **Period Cards:** Individual 4-day forecast cards with day/time labels
+- **Header:** Updated timestamp in SG locale (e.g., "Mon, 01 Dec 2025 at 05:20")
+- **Day Cards:** Individual 4-day forecast cards with:
+  - Day name and day number (Day 1, Day 2, etc.)
+  - Weather emoji based on forecast text (⛈️, 🌧️, ☀️, etc.)
+  - Forecast description (e.g., "Afternoon thundery showers")
+  - Temperature range (low-high) in °C
+  - Humidity range (low-high) in %
+  - Wind speed range and direction (km/h and compass direction)
+- **First day:** Highlighted with blue border
 - **Metrics:**
-  - Wind: `XX km/h Direction`
-  - Humidity: `XX%`
-  - Temperature ranges in °C
+  - Wind: `XX-XX km/h Direction`
+  - Humidity: `XX%-XX%`
+  - Temperature: `XX-XX°C`
 
 ## Testing
 
