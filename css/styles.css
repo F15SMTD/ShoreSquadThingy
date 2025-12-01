@@ -668,6 +668,98 @@ a:hover {
 }
 
 /* ============================================
+   NEXT CLEANUP LOCATION (GOOGLE MAPS)
+   ============================================ */
+
+.next-cleanup-section {
+    background: linear-gradient(135deg, rgba(0, 188, 212, 0.05), rgba(0, 102, 204, 0.05));
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    margin-top: var(--spacing-xl);
+    border-left: 4px solid var(--color-secondary);
+}
+
+.next-cleanup-title {
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-lg);
+    font-size: var(--font-size-xl);
+    text-align: center;
+}
+
+.next-cleanup-info {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: var(--spacing-lg);
+    align-items: start;
+}
+
+.cleanup-location-details {
+    background: white;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border-top: 3px solid var(--color-success);
+}
+
+.cleanup-location-details h4 {
+    color: var(--color-primary);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.cleanup-location-details p {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-md);
+    color: var(--color-text-secondary);
+}
+
+.cleanup-location-details p strong {
+    color: var(--color-dark);
+    font-weight: 700;
+}
+
+.google-maps-embed {
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.google-maps-embed iframe {
+    display: block;
+    width: 100%;
+}
+
+@media (max-width: 1024px) {
+    .next-cleanup-info {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .google-maps-embed {
+        height: 350px;
+    }
+}
+
+@media (max-width: 768px) {
+    .next-cleanup-section {
+        padding: var(--spacing-lg);
+    }
+
+    .cleanup-location-details {
+        padding: var(--spacing-md);
+    }
+
+    .next-cleanup-title {
+        font-size: var(--font-size-lg);
+    }
+
+    .google-maps-embed {
+        height: 300px;
+    }
+}
+
+/* ============================================
    CREW SECTION
    ============================================ */
 
